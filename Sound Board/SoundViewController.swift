@@ -13,14 +13,22 @@ class SoundViewController: UIViewController {
     
     @IBOutlet weak var nameTextField: UITextField!
     
+    @IBOutlet weak var playButton: UIButton!
+  
     @IBOutlet weak var recordButton: UIButton!
     
+    @IBOutlet weak var addButton: UIButton!
+    
     var audioRecorder : AVAudioRecorder?
+    var audioPlayer : AVAudioPlayer?
+    var audioURL : URL?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupRecorder()
+        playButton.isEnabled = false
+        addButton.isEnabled = false
     }
     
     func setupRecorder() {
@@ -37,9 +45,7 @@ class SoundViewController: UIViewController {
             let basePath : String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
             
             let pathComponents = [basePath, "audio.m4a"]
-            let audioURL = NSURL.fileURL(withPathComponents: pathComponents)!
-            print("##########################")
-            print(audioURL)
+            audioURL = NSURL.fileURL(withPathComponents: pathComponents)!
             
             // create settings for the audio recorder
             
@@ -50,7 +56,7 @@ class SoundViewController: UIViewController {
             
             // create AudioRecorder object
             
-            audioRecorder = try AVAudioRecorder(url: audioURL, settings: settings)
+            audioRecorder = try AVAudioRecorder(url: audioURL!, settings: settings)
             audioRecorder!.prepareToRecord()
         } catch let error as NSError {
             print(error)
@@ -65,21 +71,45 @@ class SoundViewController: UIViewController {
             
             // Change button title to Record
             recordButton.setTitle("Record", for: .normal)
+            
+            playButton.isEnabled = true
+            addButton.isEnabled = true
         } else {
             // Start recording
             audioRecorder?.record()
             
             // change button title to Stop
             recordButton.setTitle("Stop", for: .normal)
+            
+            // pokud se opet zacne nahravat tak tlacitko Play i Add zase zmizi... coz Nick v kodu nema
+            playButton.isEnabled = false
+            addButton.isEnabled = false
         }
         
     }
     
     @IBAction func playTapped(_ sender: Any) {
+        do {
+            try audioPlayer = AVAudioPlayer(contentsOf: audioURL!)
+            audioPlayer!.play()
+        } catch {}
     }
     
     
     @IBAction func addTapped(_ sender: Any) {
+        
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        
+        let sound = Sound(context : context)
+        
+        sound.name = nameTextField.text
+        sound.audio = NSData(contentsOf: audioURL!)
+        
+        (UIApplication.shared.delegate as! AppDelegate).saveContext()
+        
+        navigationController!.popViewController(animated: true)
+        
+        
     }
     
 }
