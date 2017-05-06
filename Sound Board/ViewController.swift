@@ -52,10 +52,29 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let sound = sounds[indexPath.row]
         do {
-        audioPlayer = try AVAudioPlayer(data: sound.audio! as Data)
+            audioPlayer = try AVAudioPlayer(data: sound.audio! as Data)
             audioPlayer?.play()
         } catch {}
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        
+        // Summarization
+        // if the editing style is delete than...
+        if editingStyle == .delete {
+            // ...we gonna grab the sound, grab the context...
+            let sound = sounds[indexPath.row]
+            // ...we gonna use that context to say delete the sound...
+            let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+            context.delete(sound)
+            // ...we gonna save...
+            (UIApplication.shared.delegate as! AppDelegate).saveContext()
+            // ... and then we gonna go get the new stuff that's in core data and put in array and reload the table 
+            do {
+                sounds = try context.fetch(Sound.fetchRequest())
+                tableView.reloadData()
+            } catch {}
+        }
+    }
 }
